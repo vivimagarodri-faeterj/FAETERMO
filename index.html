@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Faetermo</title>
+  <style>
+    :root{
+      --paper:#eef1f5;
+      --ink:#0c1420;
+      --muted:#4a5568;
+      --panel:#f7f9fc;
+      --empty:#ffffff;
+      --filled:#dbe6f5;
+      --absent:#374151;
+      --present:#6b93c7;
+      --correct:#1e5aa8;
+      --danger:#3a4a63;
+      --key:#ffffff;
+      --accent:#1e5aa8;
+      --tile:clamp(30px,8.4vw,54px);
+      --gap:clamp(3px,1vw,7px);
+      --border:3px;
+      --shadow:4px 4px 0 var(--ink);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);font-family:Arial Black,Impact,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow-x:hidden}
+    body{display:flex;justify-content:center;touch-action:manipulation}
+    .app{width:min(1180px,100%);min-height:100svh;display:flex;flex-direction:column;padding:calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom));gap:8px}
+    header{display:grid;grid-template-columns:1fr auto;align-items:center;border:var(--border) solid var(--ink);background:var(--panel);box-shadow:var(--shadow);padding:8px;gap:8px}
+    header>div:first-child{display:none}
+    h1{grid-column:1;margin:0;font-size:clamp(30px,9vw,54px);letter-spacing:-.05em;font-weight:1000;text-transform:uppercase;line-height:.9;text-shadow:2px 2px 0 #9db8dc}
+    .top-actions{justify-self:end;display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
+    button,select{appearance:none;border:var(--border) solid var(--ink);border-radius:0;background:var(--panel);color:var(--ink);font-weight:1000;padding:9px 10px;cursor:pointer;font-size:13px;box-shadow:3px 3px 0 var(--ink);text-transform:uppercase;min-height:40px}
+    button:active,select:active,.key:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+    .primary{background:var(--accent);color:#fff}.danger{background:var(--danger);color:#fff}
+    main{display:flex;flex-direction:column;gap:8px;align-items:center;flex:1;justify-content:space-between;min-height:0}
+    .status{width:100%;min-height:28px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ink);font-weight:1000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:13px;padding:3px 8px;border:2px solid var(--ink);background:#c4d5ec}
+    .boards-wrap{width:100%;display:grid;gap:8px;align-items:start;justify-content:center;overflow:visible}
+    .boards-wrap.mode-1{grid-template-columns:min-content}.boards-wrap.mode-2{grid-template-columns:repeat(2,min-content)}.boards-wrap.mode-4{grid-template-columns:repeat(4,min-content)}
+    .board-card{background:var(--panel);border:var(--border) solid var(--ink);border-radius:0;padding:7px;box-shadow:var(--shadow)}
+    .board-title{height:17px;text-align:left;color:var(--ink);font-size:10px;text-transform:uppercase;letter-spacing:.04em;font-weight:1000;line-height:1}
+    .board{display:grid;grid-template-rows:repeat(var(--rows),var(--tile));gap:var(--gap)}
+    .row{display:grid;grid-template-columns:repeat(5,var(--tile));gap:var(--gap)}
+    .tile{width:var(--tile);height:var(--tile);display:grid;place-items:center;background:var(--empty);border:var(--border) solid var(--ink);border-radius:0;font-weight:1000;font-size:clamp(19px,5.4vw,34px);text-transform:uppercase;line-height:1;user-select:none;transition:transform .08s ease,background .12s ease,color .12s ease;box-shadow:2px 2px 0 var(--ink)}
+    .tile.filled{background:var(--filled)}.tile.pop{transform:scale(1.06)}
+    .tile.absent{background:var(--absent);color:#fff}.tile.present{background:var(--present);color:#fff}.tile.correct{background:var(--correct);color:#fff}
+    .tile.shake{animation:shake .28s linear}.tile.reveal{animation:flip .28s ease both}
+    @keyframes shake{20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+    @keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+    .keyboard{width:min(720px,100%);display:grid;gap:6px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+    .krow{display:flex;gap:5px;justify-content:center}.key{min-width:0;height:48px;flex:1;border:var(--border) solid var(--ink);border-radius:0;background:var(--key);color:var(--ink);display:grid;place-items:center;font-weight:1000;text-transform:uppercase;box-shadow:3px 3px 0 var(--ink);padding:0;font-size:15px}
+    .key.big{flex:1.7;font-size:11px;background:#c4d5ec}.key.absent{background:var(--absent);color:#fff}.key.present{background:var(--present);color:#fff}.key.correct{background:var(--correct);color:#fff}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.modal.show{display:flex}
+    .box{width:min(520px,100%);background:var(--panel);border:var(--border) solid var(--ink);border-radius:0;padding:18px;box-shadow:8px 8px 0 var(--ink)}
+    .box h2{margin:0 0 8px;font-size:28px;text-transform:uppercase;letter-spacing:-.04em}.answers{display:grid;gap:8px;margin:14px 0}.answer{background:#fff;border:2px solid var(--ink);border-radius:0;padding:10px 12px;font-weight:1000;display:flex;justify-content:space-between;gap:10px}.answer span:last-child{color:var(--muted)}
+    .help{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;color:var(--ink);line-height:1.35;font-weight:700}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.actions button{flex:1}
+    .toast{position:fixed;top:calc(76px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#fff;color:var(--ink);padding:11px 16px;border:var(--border) solid var(--ink);border-radius:0;font-weight:1000;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .15s ease;z-index:20;white-space:nowrap}.toast.show{opacity:1}
+    @media (max-width:980px){.boards-wrap.mode-4{grid-template-columns:repeat(2,min-content)}}
+    @media (max-width:560px){
+      .app{padding-left:6px;padding-right:6px;gap:6px}
+      header{padding:6px;box-shadow:3px 3px 0 var(--ink)}
+      .top-actions{gap:5px}button,select{font-size:11px;padding:7px 8px;min-height:36px;box-shadow:2px 2px 0 var(--ink)}
+      .boards-wrap{gap:6px}.board-card{padding:5px;box-shadow:3px 3px 0 var(--ink)}
+      .boards-wrap.mode-2,.boards-wrap.mode-4{grid-template-columns:repeat(2,min-content)}
+      .keyboard{gap:5px}.key{height:44px;font-size:13px;box-shadow:2px 2px 0 var(--ink)}.key.big{font-size:10px}.krow{gap:4px}
+    }
+    @media (max-width:390px){
+      :root{--tile:clamp(29px,7.9vw,34px);--gap:3px;--border:2px;--shadow:3px 3px 0 var(--ink)}
+      h1{font-size:clamp(28px,8vw,34px)}.board-title{height:14px;font-size:8px}.status{font-size:12px;min-height:24px}
+      .board-card{padding:4px}.key{height:41px;font-size:12px}.key.big{font-size:9px}.top-actions button,.top-actions select{padding:6px 7px}
+    }
+    @media (max-height:720px) and (max-width:430px){.key{height:38px}.status{min-height:22px}.app{gap:5px}.boards-wrap{gap:5px}.board-card{padding:4px}.board-title{height:13px}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div></div>
+      <h1>Faetermo</h1>
+      <div class="top-actions">
+        <select id="mode" title="Modo de jogo">
+          <option value="1">1 palavra</option>
+          <option value="2">2 palavras</option>
+          <option value="4">4 palavras</option>
+        </select>
+        <button id="helpBtn">?</button>
+        <button id="newBtn" class="primary">Novo</button>
+      </div>
+    </header>
+    <main>
+      <div class="status" id="status">Faetermo: descubra a palavra de 5 letras.</div>
+      <section id="boards" class="boards-wrap mode-1"></section>
+      <section class="keyboard" id="keyboard"></section>
+    </main>
+  </div>
+  <div id="toast" class="toast"></div>
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="box">
+      <h2 id="modalTitle">Resultado</h2>
+      <p class="help" id="modalText"></p>
+      <div class="answers" id="answers"></div>
+      <div class="actions">
+        <button id="again" class="primary">Jogar novas palavras</button>
+        <button id="close">Fechar</button>
+      </div>
+    </div>
+  </div>
+<script>
+(() => {
+  // Dicionário embutido de palavras de 5 letras, normalizadas sem acentos.
+  // VALID aceita tentativas; WORDS é o subconjunto mais comum usado para sorteio.
+  // Dicionario PT-BR filtrado: 5 letras, sem acentos, sem nomes proprios/estrangeirismos obvios.
+  // WORDS e o conjunto de respostas sorteaveis; VALID e o conjunto maior de tentativas aceitas.
+  const WORDS = `muito sobre mesmo ainda fazer minha todos agora entre assim mundo estao tempo tenho foram coisa nunca quero parte entao nossa estou forma maior outro menos antes sendo desde falar tinha ficar pouco disse noite nosso podem vezes estar grupo todas dizer outra vamos voces lugar saber volta pelos conta gente final quase tanto filho homem video disso horas poder seria mesma tarde local morte temos esses essas filme havia geral certo feito neste terra falta favor serie causa deste feira fosse posso ficou ajuda cerca corpo desta meses tenha algum cinco dessa livro amigo claro deles pelas desse fotos muita norte ponto quais feliz gosto nesse estes forca dados manha porem atras deixa saude somos papel fazem forte facil passa legal longo marco sinto campo junho lista filha ouvir perto unico apoio ideia junto levar nessa ontem porto unica jovem livre nesta olhos serio carro festa novas nivel total vista abril irmao plano viver linha tendo estas jogos julho novos ordem tomar idade mudar visto baixo chega jeito valor daqui parar teria tirar comum devem houve texto epoca casos criar longe prova acima atual civil olhar gosta pedir sabia super achei canal feita pegar chefe comer trata busca chama dizem passo sexta pagar serem ambos banco obras porta praia autor clube curso fundo levou radio verde natal crime falou fonte redes armas banda dando jogar possa sabem sejam velho podia reais sorte lider massa monte pensa resto votos certa linda mente medio corte delas marca preso menor sente abrir capaz carta deixe leste matar sonho achar culpa nomes risco santo usado morto acaba amiga mudou casas torna andar crise saiba segue sinal tipos rosto saida caixa igual lindo tiver vidas basta casal hotel longa pediu penso preto troca breve lidar reino vendo chave minas redor vindo baixa ficam negro roupa banho entra falei fique teste otimo adoro aulas bahia cheio fazia nisso obter serra cargo tanta torno beber clima midia perda termo venha chuva devia pobre usada calma criou haver queda setor velha louco oeste pedra tenta tocar temas carne clara leite posto caras golpe ligar lutar moral serve terem venda acham cheia custo facto faixa ganha meios palco prazo otima bater humor museu calor cenas curta ponte enfim notas pista raiva sites sitio deram erros falam faria folha vento casar negra perdi dizia fomos morta odeio posse toque viram artes rural senti aguas canto cores fatos ferro frase grave honra seres tomou bolsa curto dupla piada rapaz renda vinho aonde danos justo motor oscar letra subir vinte unido altos bloco carga disco etapa gomes passe peixe ponta votar virus audio anual aviso barra bomba conto pegou pouca tirou volto abriu alves droga fugir forum ilhas navio solar turma virar vivem beijo custa dicas lados louca manda atriz corre povos virou civis larga regra samba souza cento jogou parou penal alias ciclo heroi lendo matou peito beira drama lojas moeda morre acaso achou ambas creio parem preta primo turno vazio pinto puder vemos extra falha pense prima ramos briga https morar ouviu perde areia arroz coroa cunha euros fluxo lenda metal nariz prata rocha tiros altas dever exame falso limpa perna ritmo sofre soube temer vagas arena bateu diria ideal presa taxas ampla dedos resta torre metro ricos senso ajude copia forem ganho lance lavar levam ondas papai pleno salto vinha elite firme fraco gerar greve junta prato surge vidro ativa bordo chamo fizer graus mexer morro placa salas tchau vivos zonas adeus dores falsa adora anjos chico deixo vozes obvio baile bolso lopes meter nobre roubo tente valeu vinda barco daria disto email exige frota lutas poeta vejam posta viveu ativo cobre diabo parto senha venho bases ficha magia salvo tocou vimos aluno bispo dieta plena porte cobra febre largo poema rodas salva suave tento atuar bando cujos durou fator itens limpo micro nasce negar odeia ruins solta volte vossa amplo belas gatos neves noiva ocupa sabes sinta sousa vigor amado bento duplo fruto podes valer vende multa perca senta calar corta doces milho pesca sabor unhas abuso balas chato clipe exato expor fumar raios tomei tribo anime bebes canta culto luzes pizza salve cuida fases gordo ligou mapas subiu envie fecha grito lucro notar vivia almas colar conte datas donos justa loira missa moura mudei tirei usava viola dobro grego macho norma viria corda grana iriam levei mello nobel olhem tinta afeta andam blogs casou dorme durar lento ossos pauta piano segui vosso barba burro celso cinza comeu dente deusa fraca molho nunes alvos amava apoia bruce cujas dadas deter doido gerou ligue mando nasci neles ombro pasta usina acabo cruel digam fugiu modos mudam pagos pares pedem penas praga trama vital acabe bolas circo fieis judeu junte mande pagam pausa serei azuis bacia censo citar criei lenta meias porco puxar traga vence bravo bruto chapa curva goste olhei pagou pires rival rosas sofia trono vazia votou amada carla creme digno marte rever sigam sigla ataca caros conde gesto lazer linux mails malas malta nuvem olhou solto tigre apelo coral lagoa lagos pular sumiu trato tropa besta brava focar fruta mover pacto parei velas cerco curar envia envio folga negou palma vasta vitor assis damos grama manga rindo vilas vivas baixe bares couro gripe julio mesas metas terei villa elena gases infra lemos tende torne vapor abreu atlas credo desce diogo opera saldo turco varia bicho brito bueno delta duque horta ratos atrai avisa bella bonus calmo cuide gorda leves sexto testa trigo viaja corra criam lutou medir mitos radar rezar sobra duelo golfo grega matam ninho notou pneus risos bacon exibe gasto impor lobos noivo pegue poste selva torta indio beija chame flora forno gasta juros laser moram ninja persa pesos secas troco choro chute dormi fatal ganhe jaime lorde luiza mauro medos muros penha reduz tampa tomas touro trago trens atuam covid edson elias fauna janet manto raros treze valem altar batom fadas farol nelas netos roque sirva andei botar citou falem grato jogam lucia odiar raras ricas ronda unida veste balde bruna bruxa chego exata fibra firma fogos lopez monge vasto cabos falas morra naval optou secar susto telas verem atuou blusa borda chora demos doida golfe grita julie misto rolar trate urnas verso cotas fazes felix fitas forro grata guias lutam param pilar prado pulso rotas solos tomam asilo cacau cesta farei lucio palha pesar treta tumor verbo vocal alega copos digna enche entro fecho latim madre paiva pilha surto tomem belos bolha chata jogue judas julga motel pague podre punho sonha abrem banca boate ceder cinto comem farsa genes ligam matei nadar olham rouba sacos trair tubos turca verba zumbi afeto capas casca couto duras frias liceu naves nisto pagas patas pedia virei aline isaac lente rubro tiram barro botas doses ervas ethan luana mares peste tiras versa aluna andou astro cauda ferir gerir jesse matos minho ouvia remix rodar servo tirem trava valia achas anexo brisa damas elisa filas leito mania plaza urina vasos actos errar evita meteu ouvem selos afins damon errou farta farto lenha morri pouso punir rigor signo traje angra bruta cegos darem ditas durmo lares magra magro malha matas patos sogra surra tocha virem xviii artur bates bolos garra geram idoso irene jejum pisar pondo sonda sueco viena viral cabra eixos joias luvas pegam pinta silas sutil tenso terno traiu vales corri cuido durma dutra etnia foste mista narra nepal perco saiam salta sinos situa somar boato freio genro golos ivete levem mosca mural panda romeu senna sorri sumir ajudo annie apaga carlo davam ibope latas leais mexeu optar renal secos sedes sexos acusa aguda anton belga carmo chore folia indie letal piora saque tocam turbo vidal atira bocas copas entes fatia frios girar libra mamas mirim teles temor visse arame burra catar curte deita dunas finge gajos grava julgo notei prosa ramon reage reina tadeu tosse veias frete gomez manos vacas vigia bazar camas feche imune lunar magno motos rolou bebeu judia luzia puxou ruiva sacar supor afora batem bosco chang clone cruza cunho donde facas fixar fogem lauro leiam luisa peles picos ponha sopro tenda adota ariel autos chove dizes douro guiar ligas sofri surdo adiar arcos caldo cofre combo depor deves diniz lotes pudim vinil comia nadia nozes plana poupe rumor saias sogro trave valle veiga casco ditos doado farra fuzil idosa leila litro loiro quilo adele direi dobra eliza emite evite fluir furar livra motta pardo rapto rende tensa anima barca cisco corvo coxas cueca dulce duram feroz irmos motim rampa reter sujas tecla teres apito avise fardo finas frito leque macio memes movem pombo rumos sueca tinto acesa andes aroma ateus belle cedeu darei duros esqui fezes fidel funda gaita hinos pinho temem vazou bonde canoa cezar coube frita gotas laudo magna megan ponho salsa tonta ufrgs vinci visam zinco cupom diane feriu garfo monta moveu torto vazar aedes anais apego bebem celas cubra eleva feias fosso ganso leram parti seita sujos surda blitz brega densa fenda henri maias teses xeque blanc errei gesso mudas pente pisos bingo canos clero edith fungo galho morde morou oliva pariu pcdob sarro somam temia tutor ursos viseu abate alain anglo apolo batia cabem corto dario fixos fones fraga franz furto pazes peres socos verme vetor agnes armar cansa cifra ficas focos livia meros nervo pique poupa sobem tarso bruxo donas fossa guido macia macro murro pegos pomba pulou quito recuo tumba valha algas caber gatas gruta lidas lidos magos olavo panos paola polvo porca safra sujar viste agudo andas bossa busco casta chade cosmo crias finos pingo prego ruivo sejas veloz atire basco corro derem jatos jurei manta nicho parva sirvo tarda bambu botou ellie lidam molde nando paolo pepsi unesp abram beije brasa cache crato cravo dueto gales hiper leigh louro matem mudem orais prega sento sinai votem almir bioma casam cloro curti dunga erica nolan pisou punta ramal rojas ruben salmo sofro tonto arcar aspas baita balsa clica covas della denso enfia ester fuder irina magoa pavor quota sofra verei abade amora amore apoie bangu coque elton horto ibero jaula limpe tecto trote viado votam zebra aptos borja caiam cante capim cegas couve dixon fiona fodeu jolie minaj pinos polos putos solte tange tombo trevo venci vivam xingu creed giles jenna jurou papal somou tapas torce valsa zelda agido aliar aveia avril bauer breno busto elfos furos fusca haste morei nasal odiei parta puros viaje apela arder bicos celia edita ergue feixe fetal fodam milha pavel titan veado vulgo abria adega banal brejo custe deite doris farda filma limbo muniz nadal nulos orgia pedal tapar veria abala achem arara cinta csiro feras fixas fuzis mamar papas potes rimas ritos servi sutis vaias votei argel cesto checa cisne digas fritz fugas grilo janot janta jitsu notre pisca reich rolos vagos varas volvo banha capuz ebola exija gamer intra lenin lucca mansa morse neiva repor sensu thais adolf ahmad angie celta devam frodo lages lambe lavou licor logos metem negam petit puras tasso alpes anote caleb cerne cerro choca divas elege fofos gueto jurar luigi manso marin odeie osmar sabre sampa sauna selma slade sopra trios viajo alvin bambi broca chica chuta citei clive cotia grado grimm irado lebre linho moles richa adote agita assar cedro cusco desci feios frida giram giros jamal mimos moita morna mundi osama papua sacou saulo suado tetas banir basto bobos borba clint conan dalai evoca frevo funai gmail imita libre lidia mafra paige pasto prece risca rompe sapos shiva aceso atena babel cabul calem canso cavar falho gemma hasta incas iphan jairo menti modus ocupe petra racha recua retas seara souto tolos trois vesti bebia buena citam corja cromo greco hilda loura mabel maite mecha pomar regem rimos rocco telha varal vendi ameno ative bodas criem dogma ducha exijo falte focou graal heidi ibiza minta moniz nuevo optam pegas pirar pudor rasos samir setas surfe tania zelar aprox azedo bessa bucal canil cubos culpe ditar docas fores grite medem meigo minto negue pinga regis tabus tetos urubu alexa deveu gajas isola lutem nueva praxe telma tidos tupac vader vespa volts casei dhabi edema forme hazel ileso lerem netto odair paira poros posar relva tetra vigas xerox arias cielo draco fobia ivone josef laico lajes levas lisos magda maura meiga ringo rodou saito secou senac tenra tiara treme vives abalo aluga babar bello dinah eliot elmer fixou gemas gozam lapso picar puxei rugas serva snoop socar sucre trupe truta tuita italo amara cabia chung clama encha gallo goela maluf menta meras abbas bamba bosch botes creem dimas greta horda lidou metam minar parvo peido pesam polpa selar serge sigma actua avant bebam berta braun calda cecil cheng darth dotes finja fofas frear goles grife incra lombo lutei maxim mirar molas nanda noche numas papos prada recai ribas rombo rufus subia supra tomaz turim uribe adere astor atari calou campi conti falir focam galos gozou gucci hagen huang jihad lavei orion regar rubio sadia sagan sismo alana basso benta betim calle clair culpo curas datam juana meira mlstp ouros plata prost rasas reler rolim ronco sacra tonga anota anula brics comam curou emile gibis haifa jiang mahal mexem pinte sucos touca adler alepo alerj becos cacos cosme creia cueva farah fingi fugia hodge laila leigo mateo modem olsen otero pesou sarau sloan`.split(/\s+/).map(w=>normalize(w)).filter(w=>w.length===5);
+  const VALID = new Set(WORDS);
+  const state = { mode:1, rows:6, row:0, col:0, guess:'', answers:[], done:false, solved:[], guesses:[] };
+  const $ = s => document.querySelector(s);
+  const boardsEl = $('#boards'), keyboardEl = $('#keyboard'), toastEl = $('#toast');
+  function normalize(s){return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ç/g,'c').replace(/[^a-z]/g,'');}
+  function pick(n){ const pool=[...new Set(WORDS)]; for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]} return pool.slice(0,n); }
+  function rowsFor(mode){ return mode===1 ? 6 : mode===2 ? 7 : 9; }
+  function start(mode=state.mode){ state.mode=Number(mode); state.rows=rowsFor(state.mode); state.row=0; state.col=0; state.guess=''; state.done=false; state.answers=pick(state.mode); state.solved=Array(state.mode).fill(false); state.guesses=[]; $('#mode').value=String(state.mode); renderBoards(); renderKeyboard(); setStatus(state.mode===1?'Faetermo: descubra a palavra de 5 letras.':`Faetermo: descubra ${state.mode} palavras ao mesmo tempo.`); hideModal(); }
+  function renderBoards(){ boardsEl.className=`boards-wrap mode-${state.mode}`; boardsEl.innerHTML=''; boardsEl.style.setProperty('--rows',state.rows); for(let b=0;b<state.mode;b++){ const card=document.createElement('div'); card.className='board-card'; card.innerHTML=`<div class="board-title">Palavra ${b+1}</div><div class="board" data-board="${b}"></div>`; const board=card.querySelector('.board'); board.style.setProperty('--rows',state.rows); for(let r=0;r<state.rows;r++){ const row=document.createElement('div'); row.className='row'; for(let c=0;c<5;c++){ const tile=document.createElement('div'); tile.className='tile'; tile.dataset.r=r; tile.dataset.c=c; tile.dataset.b=b; row.appendChild(tile);} board.appendChild(row);} boardsEl.appendChild(card);} }
+  function renderKeyboard(){ const rows=['qwertyuiop','asdfghjkl','zxcvbnm']; keyboardEl.innerHTML=''; rows.forEach((letters,i)=>{ const row=document.createElement('div'); row.className='krow'; if(i===2) row.appendChild(key('enter','ENTER','big')); [...letters].forEach(ch=>row.appendChild(key(ch,ch))); if(i===2) row.appendChild(key('back','⌫','big')); keyboardEl.appendChild(row); }); }
+  function key(code,label,cls=''){ const el=document.createElement('button'); el.className=`key ${cls}`; el.textContent=label; el.dataset.key=code; el.addEventListener('click',()=>handle(code)); return el; }
+  function setStatus(t){ $('#status').textContent=t; }
+  function toast(t){ toastEl.textContent=t; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'),1200); }
+  function handle(k){ if(state.done) return; if(k==='enter') return submit(); if(k==='back') return backspace(); if(/^[a-z]$/.test(k)) add(k); }
+  function add(ch){ if(state.col>=5) return; state.guess+=ch; state.col++; document.querySelectorAll(`.tile[data-r="${state.row}"][data-c="${state.col-1}"]`).forEach(t=>{t.textContent=ch;t.classList.add('filled','pop');setTimeout(()=>t.classList.remove('pop'),90)}); }
+  function backspace(){ if(state.col<=0) return; state.col--; state.guess=state.guess.slice(0,-1); document.querySelectorAll(`.tile[data-r="${state.row}"][data-c="${state.col}"]`).forEach(t=>{t.textContent='';t.className='tile'}); }
+  function submit(){ const g=normalize(state.guess); if(g.length<5){shake();return toast('Digite 5 letras.')} if(!VALID.has(g)){shake();return toast('Palavra não reconhecida.')} state.guesses.push(g); reveal(g); state.row++; state.col=0; state.guess=''; if(state.solved.every(Boolean)){ state.done=true; setTimeout(()=>finish(true),900); return; } if(state.row>=state.rows){ state.done=true; setTimeout(()=>finish(false),900); return; } setStatus(`${state.rows-state.row} tentativa${state.rows-state.row===1?'':'s'} restante${state.rows-state.row===1?'':'s'}.`); }
+  function shake(){ document.querySelectorAll(`.tile[data-r="${state.row}"]`).forEach(t=>{t.classList.add('shake');setTimeout(()=>t.classList.remove('shake'),300)}); }
+  function score(guess,answer){ const out=Array(5).fill('absent'), used=Array(5).fill(false); for(let i=0;i<5;i++) if(guess[i]===answer[i]){out[i]='correct';used[i]=true;} for(let i=0;i<5;i++){ if(out[i]==='correct') continue; for(let j=0;j<5;j++) if(!used[j] && guess[i]===answer[j]){out[i]='present';used[j]=true;break;} } return out; }
+  function reveal(g){ const keyRank={absent:1,present:2,correct:3}; const revealRow=state.row; for(let b=0;b<state.mode;b++){ if(state.solved[b]) continue; const res=score(g,state.answers[b]); if(g===state.answers[b]) state.solved[b]=true; res.forEach((kind,c)=>setTimeout(()=>{ const t=document.querySelector(`.tile[data-b="${b}"][data-r="${revealRow}"][data-c="${c}"]`); if(!t) return; t.classList.add('reveal'); t.classList.remove('filled'); t.classList.add(kind); const k=document.querySelector(`.key[data-key="${g[c]}"]`); if(k){ const cur=['absent','present','correct'].find(x=>k.classList.contains(x)); if(!cur || keyRank[kind]>keyRank[cur]){k.classList.remove('absent','present','correct');k.classList.add(kind);} } },c*95)); }
+  }
+  function finish(win){ $('#modalTitle').textContent = win ? 'Você venceu!' : 'Fim de jogo'; $('#modalText').textContent = win ? `Resolvido em ${state.row} tentativa${state.row===1?'':'s'}.` : 'As palavras eram:'; const a=$('#answers'); a.innerHTML=''; state.answers.forEach((w,i)=>{ const div=document.createElement('div'); div.className='answer'; div.innerHTML=`<strong>${w.toUpperCase()}</strong><span>${state.solved[i]?'resolvida':'não resolvida'}</span>`; a.appendChild(div); }); showModal(); }
+  function showModal(){ $('#modal').classList.add('show'); } function hideModal(){ $('#modal').classList.remove('show'); }
+  $('#newBtn').addEventListener('click',()=>start()); $('#again').addEventListener('click',()=>start()); $('#close').addEventListener('click',hideModal); $('#mode').addEventListener('change',e=>start(e.target.value));
+  $('#helpBtn').addEventListener('click',()=>{ $('#modalTitle').textContent='Como jogar Faetermo'; $('#modalText').textContent='Digite uma palavra de 5 letras. Verde indica letra certa no lugar certo; amarelo indica letra presente em outro lugar; cinza indica letra ausente. Nos modos de 2 e 4 palavras, cada tentativa vale para todos os tabuleiros. O dicionário foi refeito para PT-BR: palavras de 5 letras aceitas como tentativa e como respostas comuns, sem nomes próprios e estrangeirismos óbvios.'; $('#answers').innerHTML='<div class="answer"><strong>NOVO</strong><span>reinicia na hora</span></div>'; showModal(); });
+  window.addEventListener('keydown',e=>{ const k=e.key.toLowerCase(); if(k==='enter'||k==='backspace'||/^[a-zA-Z]$/.test(e.key)){ e.preventDefault(); handle(k==='backspace'?'back':k); }});
+  start(1);
+})();
+</script>
+</body>
+</html>
